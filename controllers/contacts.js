@@ -4,7 +4,20 @@ const ctrlWrapper = require("../helpers/ctrlWrapper");
 const { Contact } = require("../models/contact");
 
 const getAll = async (req, res, next) => {
-  const result = await Contact.find();
+  const favorite = req.query.favorite;
+  const { _id: owner } = req.user;
+  const filter = { owner };
+
+  if (favorite !== undefined) {
+    filter.favorite = favorite;
+  }
+  const { page = 1, limit = 20 } = req.query;
+  const skip = (page - 1) * limit;
+
+  const result = await Contact.find(filter, "", {
+    skip,
+    limit,
+  }).populate("owner", "email");
   res.json(result);
 };
 
@@ -18,7 +31,10 @@ const getById = async (req, res, next) => {
 };
 
 const addContact = async (req, res, next) => {
-  const result = await Contact.create(req.body);
+  const { _id: owner } = req.user;
+
+  const result = await Contact.create({ ...req.body, owner });
+
   res.status(201).json(result);
 };
 
